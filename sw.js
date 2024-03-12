@@ -1,47 +1,72 @@
-const PREFIX = 'my-pwa-cache';
-const CACHE_NAME = PREFIX + '-v1';
+const PREFIX = 'V.debug';
+const CACHE_NAME = "my-pwa-cache" + PREFIX;
 const urlsToCache = [
-    '/index.html',
-    '/styles.css',
+    '/index.html', //no-cors
+    '/styles.css', //no-cors
+    // '/offline.html',
     '/manifest.json',
-    '/icons/192.png',
-    '/icons/512.png',
+    // '/icons/192.png', //no-cors
+    // '/icons/512.png', //no-cors
     'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css'
 ];
 
 // Installation du service worker
 self.addEventListener('install', event => {
+    console.log(`${PREFIX} Install`);
+    self.skipWaiting();
+    
     event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then(cache => cache.addAll(urlsToCache))
+        (async () => {
+            const cache = await caches.open(CACHE_NAME);
+            await Promise.all(urlsToCache.map(async (path) => {
+                let request
+                try {
+                    request = new Request(path);
+                    await cache.add(request);
+                } catch (error) {
+                    console.error(`Error caching resource "${path}", Mode : ${request.mode}:`, error);
+                }
+            }));
+        })()
     );
 });
 
 // Gestion des mises à jour du service worker et nettoyage du cache
 self.addEventListener('activate', event => {
+    clients.claim();
     event.waitUntil(
         (async () => {
             const keys = await caches.keys();
             await Promise.all(
                 keys.map(key => {
-                    if (!key.includes(PREFIX)) {
+                    if (!key.includes(CACHE_NAME)) {
                         return caches.delete(key);
                     }
                 })
             );
         })()
     );
+    console.log(`${PREFIX} Active`);
 });
 
 // Intercepte les requêtes réseau et retourne la réponse du cache si disponible
 self.addEventListener('fetch', event => {
-    event.respondWith(
-        caches.match(event.request)
-            .then(response => {
-                if (response) {
-                    return response;
+    console.log(`${PREFIX} Fetching : ${event.request.url}, Mode : ${event.request.mode}`);
+
+    if (event.request.mode === "navigate") {
+        event.respondWith(
+            (async () => {
+                try {
+                    const preloadResponse = await event.preloadResponse;
+                    if (preloadResponse) {
+                        return preloadResponse
+                    }
+
+                    return await fetch(event.request)
+                } catch (err) {
+                    // Ici, le code pour retourner le cache
                 }
-                return fetch(event.request);
-            })
-    );
+            })()
+        );
+    }
 });

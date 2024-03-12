@@ -13,5 +13,5 @@
       }
     ],
     "start_url": "/?source=pwa",
-    "display": "fullscreen"
+    "display": "standalone"
 }
