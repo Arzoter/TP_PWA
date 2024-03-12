@@ -3,7 +3,7 @@ const CACHE_NAME = "my-pwa-cache" + PREFIX;
 const urlsToCache = [
     '/index.html', //no-cors
     '/styles.css', //no-cors
-    // '/offline.html',
+    '/offline.html',
     '/manifest.json',
     // '/icons/192.png', //no-cors
     // '/icons/512.png', //no-cors
@@ -59,12 +59,51 @@ self.addEventListener('fetch', event => {
                 try {
                     const preloadResponse = await event.preloadResponse;
                     if (preloadResponse) {
-                        return preloadResponse
+                        return preloadResponse;
                     }
-
-                    return await fetch(event.request)
-                } catch (err) {
-                    // Ici, le code pour retourner le cache
+    
+                    // Tenter de récupérer la ressource en réseau
+                    const networkResponse = await fetch(event.request);
+                    // Si la réponse est OK, la mettre en cache et la retourner
+                    if (networkResponse && networkResponse.ok) {
+                        const cache = await caches.open(CACHE_NAME);
+                        await cache.put(event.request, networkResponse.clone());
+                        return networkResponse;
+                    }
+                } catch (error) {
+                    console.log("no network response or not ok");
+                    console.error('Fetch error:', error);
+                        // Si la récupération en réseau a échoué, essayer de récupérer la ressource en cache
+                        const cacheResponse = await caches.match(event.request);
+                        if (cacheResponse) {
+                            return cacheResponse;
+                        }
+                        // Si la ressource n'est pas disponible en cache ni en réseau, retourner une réponse de remplacement
+                        return caches.match('/offline.html');
+                }
+            })()
+        );
+    } else {
+        event.respondWith(
+            (async () => {
+                try {
+                    // Tenter de récupérer la ressource en cache
+                    const cacheResponse = await caches.match(event.request);
+                    if (cacheResponse) {
+                        return cacheResponse;
+                    }
+                    // Si la ressource n'est pas disponible en cache, effectuer une requête réseau normale
+                    const networkResponse = await fetch(event.request);
+                    // Mettre en cache la réponse en cas de réussite
+                    if (networkResponse && networkResponse.ok) {
+                        const cache = await caches.open(CACHE_NAME);
+                        await cache.put(event.request, networkResponse.clone());
+                    }
+                    return networkResponse;
+                } catch (error) {
+                    console.error('Fetch error:', error);
+                    // Retourner une réponse de remplacement en cas d'erreur
+                    return caches.match('/offline.html');
                 }
             })()
         );
