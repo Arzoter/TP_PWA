@@ -1,0 +1,21 @@
+version: '3.8'
+services:
+  node-api:
+    build:
+      context: .
+      dockerfile: ./dockerfiles/node.Dockerfile
+    ports:
+      - "3300:3300"
+    networks:
+      - "PWA"
+  apache-server:
+    build:
+      context: .
+      dockerfile: ./dockerfiles/apache.Dockerfile
+    ports:
+      - "80:80"
+    networks:
+      - "PWA"
+      
+networks:
+  PWA:

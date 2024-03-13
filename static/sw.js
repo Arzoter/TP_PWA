@@ -1,5 +1,5 @@
-const PREFIX = 'V.debug';
-const CACHE_NAME = "my-pwa-cache" + PREFIX;
+const PREFIX = 'V3';
+const CACHE_NAME = "my-pwa-cache_" + PREFIX;
 const urlsToCache = [
     '/index.html', //no-cors
     '/styles.css', //no-cors
@@ -106,6 +106,18 @@ self.addEventListener('fetch', event => {
                     return caches.match('/offline.html');
                 }
             })()
+        );
+    }
+    if (event.request.url.endsWith('/matches')) {
+        event.respondWith(
+            caches.open(CACHE_NAME).then(cache => {
+                return fetch(event.request)
+                    .then(response => {
+                        cache.put(event.request, response.clone());
+                        return response;
+                    })
+                    .catch(() => cache.match(event.request));
+            })
         );
     }
 });
