@@ -4,8 +4,6 @@ FROM node:lts-bookworm-slim
 # Créer le répertoire de travail
 WORKDIR /usr/src/app
 
-
-
 # Copier les dépendances du package.json et du package-lock.json
 COPY ../backend/package*.json ./
 COPY ../backend/server.js ./

@@ -1,9 +1,12 @@
-const express = require('express');
-const path = require('path');
-const fs = require('fs');
+const express = require('express'),
+    path = require('path'),
+    fs = require('fs'),
+    cors = require('cors');
+
 const app = express();
-const cors = require('cors');
 const PORT = process.env.PORT || 3000;
+
+app.use(cors());
 
 // Endpoint pour récupérer les informations de score de match
 app.get('/matches', (req, res) => {
@@ -26,7 +29,6 @@ app.get('/matches', (req, res) => {
     });
 });
 
-app.use(cors());
 // Démarrer le serveur
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
